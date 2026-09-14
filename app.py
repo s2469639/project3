@@ -99,43 +99,60 @@ def render_kakao_map(lat: float, lon: float, place_name: str = ""):
          display:flex;align-items:center;justify-content:center;color:#888;font-size:13px;">
          지도를 불러오는 중...
     </div>
-    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_API_KEY}"
-        onerror="document.getElementById('map').innerHTML =
-            '<div style=&quot;padding:16px;color:#c00;font-size:13px;&quot;>' +
-            '카카오 지도 스크립트를 불러오지 못했습니다.<br>JavaScript 키 값 또는 카카오 개발자 콘솔의 ' +
-            'Web 플랫폼 도메인 등록을 확인해주세요.</div>';">
-    </script>
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_API_KEY}"></script>
     <script>
-        try {{
-            if (typeof kakao === 'undefined' || !kakao.maps) {{
-                throw new Error('카카오 지도 SDK가 로드되지 않았습니다. (appkey 또는 도메인 설정 확인 필요)');
-            }}
-            var container = document.getElementById('map');
-            container.innerHTML = '';
-            var options = {{
-                center: new kakao.maps.LatLng({lat}, {lon}),
-                level: 4
-            }};
-            var map = new kakao.maps.Map(container, options);
+        var mapTries = 0;
 
-            var marker = new kakao.maps.Marker({{
-                position: new kakao.maps.LatLng({lat}, {lon})
-            }});
-            marker.setMap(map);
-
-            var iwContent = '<div style="padding:6px 10px;font-size:13px;">{place_name}</div>';
-            var infowindow = new kakao.maps.InfoWindow({{
-                content: iwContent
-            }});
-            infowindow.open(map, marker);
-        }} catch (e) {{
+        function showMapError(msg) {{
             document.getElementById('map').innerHTML =
-                '<div style="padding:16px;color:#c00;font-size:13px;">' +
-                '지도 초기화 오류: ' + e.message +
-                '<br><br>카카오 개발자 콘솔 &gt; 내 애플리케이션 &gt; 플랫폼 &gt; Web 에 ' +
-                '현재 배포 주소(도메인)가 정확히(https:// 포함, 끝에 / 없이) 등록되어 있는지 확인해주세요.' +
-                '</div>';
+                '<div style="padding:16px;color:#c00;font-size:13px;line-height:1.6;">' + msg + '</div>';
         }}
+
+        function tryInitMap() {{
+            mapTries++;
+            var ready = (typeof kakao !== 'undefined')
+                && kakao.maps
+                && typeof kakao.maps.LatLng === 'function';
+
+            if (ready) {{
+                try {{
+                    var container = document.getElementById('map');
+                    container.innerHTML = '';
+                    var options = {{
+                        center: new kakao.maps.LatLng({lat}, {lon}),
+                        level: 4
+                    }};
+                    var map = new kakao.maps.Map(container, options);
+
+                    var marker = new kakao.maps.Marker({{
+                        position: new kakao.maps.LatLng({lat}, {lon})
+                    }});
+                    marker.setMap(map);
+
+                    var infowindow = new kakao.maps.InfoWindow({{
+                        content: '<div style="padding:6px 10px;font-size:13px;">{place_name}</div>'
+                    }});
+                    infowindow.open(map, marker);
+                }} catch (e) {{
+                    showMapError(
+                        '지도 초기화 오류: ' + e.message +
+                        '<br><br>카카오 개발자 콘솔 &gt; 내 애플리케이션 &gt; 플랫폼 &gt; Web 에 ' +
+                        '현재 배포 주소가 https:// 포함, 끝에 슬래시 없이 정확히 등록되어 있는지 확인해주세요.'
+                    );
+                }}
+            }} else if (mapTries < 25) {{
+                setTimeout(tryInitMap, 200);
+            }} else {{
+                showMapError(
+                    '지도를 불러오지 못했습니다 (SDK 준비 시간 초과).' +
+                    '<br><br>가능한 원인:' +
+                    '<br>1) JavaScript 키 값이 올바르지 않음' +
+                    '<br>2) 카카오 개발자 콘솔 &gt; 플랫폼 &gt; Web 도메인 미등록/불일치'
+                );
+            }}
+        }}
+
+        tryInitMap();
     </script>
     """
     components.html(html_code, height=440)
