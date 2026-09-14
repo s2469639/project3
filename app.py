@@ -17,7 +17,7 @@ def get_key(name: str) -> str:
             val = st.secrets.get(name, "")
         except Exception:
             val = ""
-    return val
+    return (val or "").strip()
 
 OPENWEATHER_API_KEY = get_key("OPENWEATHER_API_KEY")
 EXCHANGERATE_API_KEY = get_key("EXCHANGERATE_API_KEY")
@@ -95,26 +95,47 @@ def render_kakao_map(lat: float, lon: float, place_name: str = ""):
     # Mixed Content 에러로 차단되는 문제가 있습니다.
     # 따라서 autoload(기본값, 동기 로드) 방식을 사용해 이 문제를 피합니다.
     html_code = f"""
-    <div id="map" style="width:100%;height:420px;border-radius:12px;"></div>
-    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_API_KEY}"></script>
+    <div id="map" style="width:100%;height:420px;border-radius:12px;background:#f4f4f5;
+         display:flex;align-items:center;justify-content:center;color:#888;font-size:13px;">
+         지도를 불러오는 중...
+    </div>
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_API_KEY}"
+        onerror="document.getElementById('map').innerHTML =
+            '<div style=&quot;padding:16px;color:#c00;font-size:13px;&quot;>' +
+            '카카오 지도 스크립트를 불러오지 못했습니다.<br>JavaScript 키 값 또는 카카오 개발자 콘솔의 ' +
+            'Web 플랫폼 도메인 등록을 확인해주세요.</div>';">
+    </script>
     <script>
-        var container = document.getElementById('map');
-        var options = {{
-            center: new kakao.maps.LatLng({lat}, {lon}),
-            level: 4
-        }};
-        var map = new kakao.maps.Map(container, options);
+        try {{
+            if (typeof kakao === 'undefined' || !kakao.maps) {{
+                throw new Error('카카오 지도 SDK가 로드되지 않았습니다. (appkey 또는 도메인 설정 확인 필요)');
+            }}
+            var container = document.getElementById('map');
+            container.innerHTML = '';
+            var options = {{
+                center: new kakao.maps.LatLng({lat}, {lon}),
+                level: 4
+            }};
+            var map = new kakao.maps.Map(container, options);
 
-        var marker = new kakao.maps.Marker({{
-            position: new kakao.maps.LatLng({lat}, {lon})
-        }});
-        marker.setMap(map);
+            var marker = new kakao.maps.Marker({{
+                position: new kakao.maps.LatLng({lat}, {lon})
+            }});
+            marker.setMap(map);
 
-        var iwContent = '<div style="padding:6px 10px;font-size:13px;">{place_name}</div>';
-        var infowindow = new kakao.maps.InfoWindow({{
-            content: iwContent
-        }});
-        infowindow.open(map, marker);
+            var iwContent = '<div style="padding:6px 10px;font-size:13px;">{place_name}</div>';
+            var infowindow = new kakao.maps.InfoWindow({{
+                content: iwContent
+            }});
+            infowindow.open(map, marker);
+        }} catch (e) {{
+            document.getElementById('map').innerHTML =
+                '<div style="padding:16px;color:#c00;font-size:13px;">' +
+                '지도 초기화 오류: ' + e.message +
+                '<br><br>카카오 개발자 콘솔 &gt; 내 애플리케이션 &gt; 플랫폼 &gt; Web 에 ' +
+                '현재 배포 주소(도메인)가 정확히(https:// 포함, 끝에 / 없이) 등록되어 있는지 확인해주세요.' +
+                '</div>';
+        }}
     </script>
     """
     components.html(html_code, height=440)
