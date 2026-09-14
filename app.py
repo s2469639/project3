@@ -90,29 +90,31 @@ def render_kakao_map(lat: float, lon: float, place_name: str = ""):
         st.warning("KAKAO_JS_API_KEY가 설정되지 않아 지도를 표시할 수 없습니다.")
         return
 
+    # 주의: autoload=false + kakao.maps.load() 조합은 Streamlit의 srcdoc iframe 환경에서
+    # 카카오 SDK가 https를 제대로 감지하지 못해 내부적으로 http:// 리소스를 요청하다가
+    # Mixed Content 에러로 차단되는 문제가 있습니다.
+    # 따라서 autoload(기본값, 동기 로드) 방식을 사용해 이 문제를 피합니다.
     html_code = f"""
     <div id="map" style="width:100%;height:420px;border-radius:12px;"></div>
-    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_API_KEY}&autoload=false"></script>
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_API_KEY}"></script>
     <script>
-        kakao.maps.load(function() {{
-            var container = document.getElementById('map');
-            var options = {{
-                center: new kakao.maps.LatLng({lat}, {lon}),
-                level: 4
-            }};
-            var map = new kakao.maps.Map(container, options);
+        var container = document.getElementById('map');
+        var options = {{
+            center: new kakao.maps.LatLng({lat}, {lon}),
+            level: 4
+        }};
+        var map = new kakao.maps.Map(container, options);
 
-            var marker = new kakao.maps.Marker({{
-                position: new kakao.maps.LatLng({lat}, {lon})
-            }});
-            marker.setMap(map);
-
-            var iwContent = '<div style="padding:6px 10px;font-size:13px;">{place_name}</div>';
-            var infowindow = new kakao.maps.InfoWindow({{
-                content: iwContent
-            }});
-            infowindow.open(map, marker);
+        var marker = new kakao.maps.Marker({{
+            position: new kakao.maps.LatLng({lat}, {lon})
         }});
+        marker.setMap(map);
+
+        var iwContent = '<div style="padding:6px 10px;font-size:13px;">{place_name}</div>';
+        var infowindow = new kakao.maps.InfoWindow({{
+            content: iwContent
+        }});
+        infowindow.open(map, marker);
     </script>
     """
     components.html(html_code, height=440)
