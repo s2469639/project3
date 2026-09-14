@@ -1,0 +1,21 @@
+# 1. 환경변수 및 비밀 키 (필수)
+.env
+.env.*
+.streamlit/secrets.toml
+
+# 2. 파이썬 바이트코드 및 캐시
+__pycache__/
+*.py[cod]
+
+# 3. 가상환경 디렉터리
+venv/
+.venv/
+env/
+
+# 4. 에디터 설정 (개인 작업 환경 차이로 인한 충돌 방지)
+.vscode/
+.idea/
+
+# 5. 운영체제 임시 파일
+.DS_Store
+Thumbs.db
