@@ -99,6 +99,18 @@ def render_kakao_map(lat: float, lon: float, place_name: str = ""):
          display:flex;align-items:center;justify-content:center;color:#888;font-size:13px;">
          지도를 불러오는 중...
     </div>
+    <script>
+        // 카카오 지도 SDK가 내부적으로 document.write()를 사용해
+        // http:// 로 하드코딩된 구버전 스크립트를 삽입하는 경우가 있어
+        // HTTPS 페이지에서 Mixed Content로 차단됩니다.
+        // document.write를 가로채서 http:// 를 https:// 로 강제 치환합니다.
+        (function() {{
+            var originalWrite = document.write.bind(document);
+            document.write = function(markup) {{
+                originalWrite(String(markup).split('http://').join('https://'));
+            }};
+        }})();
+    </script>
     <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_API_KEY}"></script>
     <script>
         var mapTries = 0;
